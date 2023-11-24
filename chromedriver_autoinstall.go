@@ -1,3 +1,6 @@
+// Package chromedriver_autoinstall enables an easy way to check the installed version
+// of Google Chrome/Chromium and installs, if it is not already, a compatible
+// *chromedriver* binary.
 package chromedriverautoinstall
 
 import (
@@ -10,6 +13,7 @@ import (
 	"github.com/nicolasrod/chromedriver_autoinstall/internal/utils"
 )
 
+// Checks and installs the *ChromeDriver* binary in *cdriver_fullpath*
 func InstallChromeDriver(cdriver_fullpath string) error {
 	if cdriver_fullpath == "" {
 		return errors.New("chromedriver path cannot be empty")

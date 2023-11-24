@@ -1,3 +1,4 @@
+// Package cdriver contains auxiliary function
 package cdriver
 
 import (
@@ -90,8 +91,9 @@ func platformArch(chrome_version string) (string, string) {
 	return "", ""
 }
 
-func GetChromeDriverURL(cdriverVersion string, no_ssl bool) (string, error) {
-	pf, arch := platformArch(cdriverVersion)
+// Returns the Download URL for a ChromeDriver binary compatible with Chrome version = chromeVersion
+func GetChromeDriverURL(chromeVersion string, no_ssl bool) (string, error) {
+	pf, arch := platformArch(chromeVersion)
 	platform := pf + arch
 
 	proto := "https://"
@@ -99,7 +101,7 @@ func GetChromeDriverURL(cdriverVersion string, no_ssl bool) (string, error) {
 		proto = "http://"
 	}
 
-	vChrome := strings.Split(cdriverVersion, ".")
+	vChrome := strings.Split(chromeVersion, ".")
 	vToTest := strings.Join(vChrome[0:3], ".")
 
 	if vChrome[0] >= "115" {
@@ -134,10 +136,13 @@ func GetChromeDriverURL(cdriverVersion string, no_ssl bool) (string, error) {
 
 		return latest, nil
 	} else {
-		return proto + CD_OLD_URL + cdriverVersion + "/chromedriver_" + platform + ".zip", nil
+		return proto + CD_OLD_URL + chromeVersion + "/chromedriver_" + platform + ".zip", nil
 	}
 }
 
+// Gets the installed ChromeDriver version. If *binary* is empty, we assume the binary is
+// in the current directory. If you want to specify a binary that is in the OS PATH,
+// *binary* = "chromedriver"
 func InstalledChromeDriverVersion(binary string) (string, error) {
 	if binary == "" {
 		binary = GetChromeDriverFilename()
@@ -153,6 +158,8 @@ func InstalledChromeDriverVersion(binary string) (string, error) {
 		strings.ReplaceAll(string(out), "ChromeDriver", "")), " ")[0], nil
 }
 
+// Return is Chrome version and ChromeDriver version are compatible. If not, it is needed to
+// download a new ChromeDriver matching the Chrome version
 func NeedsUpdating(vChrome string, vChromeDriver string) bool {
 	v1 := strings.Join(strings.Split(vChrome, ".")[0:3], ".")
 	v2 := strings.Join(strings.Split(vChromeDriver, ".")[0:3], ".")
@@ -160,6 +167,8 @@ func NeedsUpdating(vChrome string, vChromeDriver string) bool {
 	return v1 != v2
 }
 
+// Get the installed Chrome version. Based on the OS, the path is inferred (hit and miss sometimes)
+// if the parameter *path* is empty.
 func InstalledChromeVersion(path string) (string, error) {
 	if path == "" {
 		if runtime.GOOS == "darwin" {
@@ -228,10 +237,11 @@ func InstalledChromeVersion(path string) (string, error) {
 	return strings.TrimSpace(v), nil
 }
 
+// Tentative location for the ChromeDriver binary
 func GetChromeDriverFilename() string {
-	ext := ""
 	if runtime.GOOS == "windows" {
-		ext = ".exe"
+		return "chromedriver.exe"
+	} else {
+		return "./chromedriver"
 	}
-	return "chromedriver" + ext
 }
