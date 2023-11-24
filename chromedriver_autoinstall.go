@@ -3,7 +3,6 @@ package chromedriverautoinstall
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -62,11 +61,4 @@ func InstallChromeDriver(cdriver_fullpath string) error {
 		}
 	}
 	return nil
-}
-
-func main() {
-	err := InstallChromeDriver("./cdrv")
-	if err != nil {
-		log.Fatal(err)
-	}
 }
