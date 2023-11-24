@@ -2,8 +2,10 @@ package cdriver
 
 import (
 	"encoding/json"
+	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,6 +27,22 @@ type versions struct {
 			} `json:"chromedriver"`
 		} `json:"downloads"`
 	} `json:"versions"`
+}
+
+func toint(v string) int {
+	no, err := strconv.Atoi(v)
+	if err != nil {
+		return 0
+	}
+
+	return no
+}
+func versionIsGTEQ(v1 string, v2 string) bool {
+	p1 := strings.Split(v1, ".")
+	p2 := strings.Split(v2, ".")
+
+	return toint(p1[0]) >= toint(p2[0]) && toint(p1[1]) >= toint(p2[1]) &&
+		toint(p1[2]) >= toint(p2[2]) && toint(p1[3]) >= toint(p2[3])
 }
 
 func platformArch(chrome_version string) (string, string) {
@@ -49,9 +67,9 @@ func platformArch(chrome_version string) (string, string) {
 		arch := ""
 
 		if runtime.GOARCH == "arm" {
-			if chrome_version != "" && chrome_version >= "115.0.5763.0" {
+			if chrome_version != "" && versionIsGTEQ(chrome_version, "115.0.5763.0") {
 				arch = "-arm64"
-			} else if chrome_version != "" && chrome_version <= "106.0.5249.21" {
+			} else if chrome_version != "" && versionIsGTEQ(chrome_version, "106.0.5249.21") {
 				arch = "64_m1"
 			} else {
 				arch = "_arm64"
@@ -157,15 +175,45 @@ func InstalledChromeVersion(path string) (string, error) {
 				}
 				path = strings.TrimSpace(string(out))
 			}
-			// } else { // for windows!
-			//     dirs = [f.name for f in os.scandir("C:\\Program Files\\Google\\Chrome\\Application") if f.is_dir() and re.match("^[0-9.]+$", f.name)]
-			//     if dirs:
-			//         version = max(dirs)
-			//     else:
-			//         dirs = [f.name for f in os.scandir("C:\\Program Files (x86)\\Google\\Chrome\\Application") if f.is_dir() and re.match("^[0-9.]+$", f.name)]
-			//         version = max(dirs) if dirs else ''
-			// }
+		} else if runtime.GOOS == "windows" {
+			gc_folder := "\\Google\\Chrome\\Application"
+			path = ""
 
+			for _, it := range []string{os.Getenv("ProgramFiles") + gc_folder,
+				os.Getenv("ProgramFiles(x86)") + gc_folder,
+				os.Getenv("ProgramW6432") + gc_folder} {
+
+				if _, err := os.Stat(it); os.IsNotExist(err) {
+					continue
+				}
+
+				path = strings.TrimSpace(it)
+			}
+
+			if path != "" {
+				var numlatest uint64 = 0
+				var latest_ver string = ""
+
+				files, err := os.ReadDir(path)
+				if err != nil {
+					return "", err
+				}
+
+				for _, file := range files {
+					if !file.IsDir() {
+						continue
+					}
+
+					num, err := strconv.ParseUint(strings.ReplaceAll(file.Name(), ".", ""), 10, 0)
+					if err == nil {
+						if num > numlatest {
+							latest_ver = file.Name()
+						}
+					}
+				}
+
+				path = path + "\\" + latest_ver
+			}
 		}
 	}
 
